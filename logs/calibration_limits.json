@@ -1,0 +1,8 @@
+{
+  "hard_min_rad": -18.79356575012207,
+  "hard_max_rad": 2.5391218662261963,
+  "safe_min_rad": -18.706299287522352,
+  "safe_max_rad": 2.45185540362648,
+  "margin_deg_joint": 5.0,
+  "gear_ratio": 27.0
+}

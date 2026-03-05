@@ -1,0 +1,22 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+.env
+
+# calibration output — intentionally NOT ignored so teams can share limits
+# logs/calibration_limits.json
+
+# editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# cognibot internal
+.cognibot/
