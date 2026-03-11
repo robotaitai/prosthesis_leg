@@ -14,7 +14,8 @@ def load_cfg():
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--id", type=int, default=100)
-    ap.add_argument("--seconds", type=float, default=7.0)
+    ap.add_argument("--seconds", type=float, default=None,
+                    help="Duration [s]. Defaults to smoke_duration_s from config.")
     ap.add_argument("--enable", action="store_true", help="Actually enable the drive.")
     args = ap.parse_args()
 
@@ -29,8 +30,9 @@ def main() -> int:
     kd = float(cfg["imp_kd"])
     safe_min = float(cfg["safe_min_rad"])
     safe_max = float(cfg["safe_max_rad"])
+    duration = args.seconds if args.seconds is not None else float(cfg.get("smoke_duration_s", 5.0))
 
-    print(f"Safe range: [{safe_min:.3f}, {safe_max:.3f}] rad  |  kp={kp}  kd={kd}")
+    print(f"Safe range: [{safe_min:.3f}, {safe_max:.3f}] rad  |  kp={kp}  kd={kd}  duration={duration}s")
 
     md = MabMd(md_id=args.id)
     md.init(max_torque_nm=float(cfg["max_torque_nm"]))
@@ -50,7 +52,7 @@ def main() -> int:
     md.enable_impedance(kp=kp, kd=kd)
     try:
         target = st0.pos_rad
-        t_end = time.time() + args.seconds
+        t_end = time.time() + duration
         while time.time() < t_end:
             # Clamp target to safe range so the drive never commands past the limits
             target_clamped = max(safe_min, min(safe_max, target))

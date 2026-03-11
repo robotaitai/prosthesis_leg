@@ -1,4 +1,5 @@
 import math
+import re
 import time
 from pathlib import Path
 
@@ -64,11 +65,21 @@ def main():
     print(f"Safe limits: min={safe_min:+.4f} rad   max={safe_max:+.4f} rad  (±{margin_deg}° joint margin)")
 
     cfg_path = Path("config/default.yaml")
-    cfg["hard_min_rad"] = round(pos_min, 4)
-    cfg["hard_max_rad"] = round(pos_max, 4)
-    cfg["safe_min_rad"] = round(safe_min, 4)
-    cfg["safe_max_rad"] = round(safe_max, 4)
-    cfg_path.write_text(yaml.dump(cfg, default_flow_style=False, sort_keys=False))
+    updates = {
+        "hard_min_rad": round(pos_min, 4),
+        "hard_max_rad": round(pos_max, 4),
+        "safe_min_rad": round(safe_min, 4),
+        "safe_max_rad": round(safe_max, 4),
+    }
+    text = cfg_path.read_text()
+    for key, val in updates.items():
+        text = re.sub(
+            rf"^({re.escape(key)}:\s*).*",
+            rf"\g<1>{val}",
+            text,
+            flags=re.MULTILINE,
+        )
+    cfg_path.write_text(text)
     print(f"\nUpdated: {cfg_path}")
 
     print("\nRun these to apply limits to the drive:")
