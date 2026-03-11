@@ -185,6 +185,15 @@ STEPS = [
             stdscr, "scripts/05_gesture_sine.py", ["--enable"]
         ),
     },
+    {
+        "label": "Gesture gait   (human walking pattern)",
+        "desc":  "Ankle/knee gait profile — heel-strike → push-off → swing. Ctrl+C to stop.",
+        "ready": lambda cfg, pos: is_calibrated(cfg) and pos_in_range(pos, cfg),
+        "done":  lambda cfg, pos: False,
+        "action": lambda stdscr, cfg: run_subprocess(
+            stdscr, "scripts/06_gesture_gait.py", ["--enable"]
+        ),
+    },
 ]
 
 ICONS = {"done": "✓", "ready": "▶", "locked": "○"}
