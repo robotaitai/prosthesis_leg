@@ -9,8 +9,8 @@ loop_hz: 100
 # ── Impedance gains (motor-side) ──────────────────────────────────────────────
 # Joint stiffness = imp_kp × gear_ratio² = imp_kp × 729  [Nm/rad]
 # Start low and increase gradually.
-imp_kp: 0.1
-imp_kd: 0.0
+imp_kp: 0.5
+imp_kd: 0.02
 smoke_duration_s: 5.0   # how long the smoke impedance hold runs [seconds]
 
 # ── Safety limits ─────────────────────────────────────────────────────────────

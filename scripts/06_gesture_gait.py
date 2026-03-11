@@ -48,40 +48,42 @@ CFG_PATH = Path("config/default.yaml")
 # at runtime via --amplitude and the available safe range.
 
 PROFILES: dict[str, list[tuple[float, float]]] = {
-    # Simplified human ankle gait (Winter 2009 data, simplified to 9 knots)
+    # Human hip flexion/extension during normal walking (Winter 2009, simplified).
+    # +1 = peak flexion (leg swinging forward)
+    # -1 = peak extension (leg behind body at push-off)
+    "hip": [
+        (0.00,  1.00),  # heel strike — peak hip flexion (~30°)
+        (0.15,  0.55),  # loading response — flexion decreasing
+        (0.35,  0.0),   # mid-stance — neutral (leg under body)
+        (0.52, -0.65),  # terminal stance — moving into extension
+        (0.62, -1.00),  # push-off — peak hip extension (~10–15°)
+        (0.73, -0.30),  # toe-off — hip starts flexing rapidly
+        (0.85,  0.55),  # mid-swing — flexion building for next step
+        (0.95,  0.90),  # late swing — approaching peak flexion
+        (1.00,  1.00),  # heel strike again
+    ],
+    # Simplified ankle gait (useful if joint is ankle-side)
     "ankle": [
-        (0.00,  0.0),   # heel strike — neutral
-        (0.08, -0.20),  # loading response — slight plantarflexion
-        (0.28,  0.55),  # mid-stance — dorsiflexion rising
+        (0.00,  0.0),   # heel strike
+        (0.08, -0.20),  # loading — slight plantarflexion
+        (0.28,  0.55),  # mid-stance — dorsiflexion
         (0.48,  1.00),  # terminal stance — peak dorsiflexion
         (0.62, -0.80),  # push-off — rapid plantarflexion
         (0.73, -0.55),  # toe-off
-        (0.83,  0.15),  # early swing — slight dorsiflexion for clearance
-        (0.93,  0.10),  # late swing — neutral approach
+        (0.85,  0.15),  # swing — clearance dorsiflexion
         (1.00,  0.0),   # next heel strike
     ],
-    # Simplified knee gait profile (same normalisation)
-    "knee": [
-        (0.00,  0.10),  # heel strike — slight flexion
-        (0.10,  0.45),  # loading response — flexion peak
-        (0.28,  0.05),  # mid-stance — near extension
-        (0.48,  0.0),   # terminal stance — full extension
-        (0.60,  0.35),  # pre-swing — flexion building
-        (0.72,  1.00),  # mid-swing — peak flexion
-        (0.88,  0.15),  # terminal swing — extending
-        (1.00,  0.10),  # heel strike
-    ],
-    # Slow / cautious rocking (useful for initial testing)
-    "slow": [
+    # Simple slow rock — good for first visual check that the motor moves
+    "rock": [
         (0.00,  0.0),
-        (0.25,  0.60),
+        (0.25,  1.00),
         (0.50,  0.0),
-        (0.75, -0.60),
+        (0.75, -1.00),
         (1.00,  0.0),
     ],
 }
 
-DEFAULT_PROFILE = "ankle"
+DEFAULT_PROFILE = "hip"
 
 
 # ── Interpolation ─────────────────────────────────────────────────────────────
@@ -132,12 +134,12 @@ def parse_args() -> argparse.Namespace:
         help="Gait profile shape.",
     )
     ap.add_argument(
-        "--stride", type=float, default=1.1,
+        "--stride", type=float, default=1.5,
         help="Duration of one complete stride cycle [seconds]. "
-             "Normal walking ≈ 1.1 s (≈ 54 strides/min).",
+             "Normal walking ≈ 1.1 s; start slow (1.5–2.0 s) to verify motion.",
     )
     ap.add_argument(
-        "--amplitude", type=float, default=0.65,
+        "--amplitude", type=float, default=0.80,
         help="Fraction of the available half-range to use (0 < amp ≤ 1.0). "
              "1.0 reaches from centre to the inner safe limit.",
     )
@@ -191,21 +193,24 @@ def main() -> int:
 
     # ── Header ──
     sep = "─" * 64
+    joint_range_deg = math.degrees(amplitude_motor * 2 / gear)
+
     print(sep)
     print(f"  Gait gesture [{args.profile}]   drive={md_id}   "
           f"{'ENABLED' if args.enable else 'DRY-RUN (no --enable)'}")
     print(sep)
     print(f"  gear_ratio        : {gear}")
-    print(f"  kp / kd           : {kp} / {kd}")
+    print(f"  kp / kd           : {kp} / {kd}   "
+          f"{'⚠  kp is low — increase imp_kp in config if motor does not move' if kp < 0.3 else '✓'}")
     print(f"  max_torque_nm     : {max_torque}")
     print(f"  safe limits       : [{safe_min:.3f},  {safe_max:.3f}] motor rad")
     print(f"  centre            : {center_motor:.3f} motor rad")
     print(f"  amplitude         : ±{amplitude_motor:.3f} motor rad  "
-          f"(±{math.degrees(amplitude_joint):.1f}° joint)")
+          f"= ±{math.degrees(amplitude_joint):.1f}° joint  "
+          f"(total swing: {joint_range_deg:.1f}°)")
     print(f"  sweep targets     : [{target_min:.3f},  {target_max:.3f}] motor rad")
-    print(f"  stride period     : {stride_s:.2f} s  "
-          f"({60/stride_s:.1f} strides/min)")
-    print(f"  strides           : {'∞ (Ctrl+C to stop)' if args.strides == 0 else args.strides}")
+    print(f"  stride period     : {stride_s:.2f} s  ({60/stride_s:.1f} strides/min)")
+    print(f"  strides           : {'∞  (Ctrl+C to stop)' if args.strides == 0 else args.strides}")
     print(sep)
 
     if not args.enable:
